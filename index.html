@@ -1,8 +1,33 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Games · CFB Hub · Sports Labs</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="v2.css"><link rel="stylesheet" href="cfb.css"><script src="sl-sports.js"></script><script src="navcfg.js"></script><script src="cfb.js"></script></head><body><div class="w"><h2 style="margin-top:14px">Week <span id="wk"></span> games</h2><p class="mut sm">Ours vs the book: our win chance and spread from Sports Labs ratings next to the books' no-vig fair chance and consensus line. Times ET.</p>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Games · CFB Hub · Sports Labs</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="v2.css"><link rel="stylesheet" href="cfb.css"><script src="sl-sports.js"></script><script src="navcfg.js"></script><script src="cfb.js"></script></head><body><div class="w"><h2 style="margin-top:14px">Week <span id="wk"></span> games</h2><p class="mut sm">Ours vs the book: our win chance and spread from Sports Labs ratings next to the books' no-vig fair chance and consensus line, plus Explosive Play, Trench/Havoc, Red-Zone Finishing, and Stadium Weather Physics. Times ET.</p>
+<div id="kbar"></div>
+<div class="grib" id="qrib" aria-label="Quick filters"></div>
+<div class="grib" id="gmrib" aria-label="Game filter"></div>
 <div class="ctl"><select class="v2" id="cf"><option value="">All conferences</option></select><select class="v2" id="so"><option value="t">Kickoff time</option><option value="e">Biggest edge</option></select></div><div class="gl" id="out"></div>
-<footer>Fair chance = average of each book's de-vigged moneyline, shown only with 2+ books. Edge = our win chance minus fair chance. Ratings model; not a guarantee.</footer></div><script>CFB.data(function(D){var E=CFB.E;wk.textContent=D.next;var cs=[...new Set(D.games.map(g=>D.teams[g.h].conf).concat(D.games.map(g=>D.teams[g.a].conf)).filter(Boolean))].sort();cf.innerHTML+=cs.map(c=>"<option>"+E(c)+"</option>").join("");
+<footer>Fair chance = average of each book's de-vigged moneyline, shown only with 2+ books. Edge = our win chance minus fair chance. Weather: MET Norway (CC BY 4.0). Ratings model; not a guarantee.</footer></div><script>CFB.data(function(D){var E=CFB.E,QF="",GF="";wk.textContent=D.next;var cs=[...new Set(D.games.map(g=>D.teams[g.h].conf).concat(D.games.map(g=>D.teams[g.a].conf)).filter(Boolean))].sort();cf.innerHTML+=cs.map(c=>"<option>"+E(c)+"</option>").join("");
 function sp(v){return v==null?"—":(v>0?"+":"")+v}
-function draw(){var G=D.games.filter(g=>!cf.value||D.teams[g.h].conf==cf.value||D.teams[g.a].conf==cf.value);G.sort(so.value=="e"?(a,b)=>Math.abs(b.edge||0)-Math.abs(a.edge||0):(a,b)=>(a.done-b.done)||(a.t<b.t?-1:1));
-out.innerHTML=G.map(function(g){var T=D.teams,hp=g.ours_p;function rw(t,me,p){return '<div class="row">'+CFB.logo(t,26)+'<b><a href="power.html#t'+t+'" style="color:inherit;text-decoration:none">'+E(T[t].nm)+'</a></b><span class="mut sm">'+E(T[t].conf||"FCS")+'</span><span style="font-weight:800">'+(g.done?(me?g.hs:g.as_):(p*100).toFixed(0)+"%")+'</span></div>'}
-return '<div class="card gm"><div class="mut sm">'+(g.done?E(g.st):CFB.fmtT(g.t))+(g.neu?" · Neutral":"")+'</div>'+rw(g.a,0,1-hp)+rw(g.h,1,hp)+'<div class="cmp"><div><div class="l">Our spread ('+E(T[g.h].ab)+')</div><b>'+sp(-g.ours_sp)+'</b></div><div><div class="l">Book spread</div><b>'+sp(g.bk_sp)+'</b></div><div><div class="l">Total</div><b>'+(g.bk_tot==null?"—":g.bk_tot)+'</b></div><div><div class="l">Our '+E(T[g.h].ab)+' win</div><b>'+CFB.pc(hp)+'</b></div><div><div class="l">Book fair</div><b>'+CFB.pc(g.bk_fair)+'</b></div><div><div class="l">'+(g.best_ml?"Best "+E(T[g.h].ab)+" ML":"Edge")+'</div><b>'+(g.best_ml?CFB.am(g.best_ml[0])+' <span class="mut sm">'+E(g.best_ml[1])+'</span>':"—")+'</b></div></div><div style="margin-top:8px">'+CFB.edge(g.edge)+' <span class="mut sm">'+(g.nb?g.nb+" books":"")+'</span></div></div>'}).join("")||'<p class="mut">No games.</p>'}
+function renderRibs(){
+ var qopts=[["","All Games ("+D.games.length+")"],["top25","🏆 Top 25 Ranked"],["edge","🔥 Biggest Edges (3%+)"],["live","🔴 Live / Upcoming"],["wx","🌬️ Weather / Wind Impact"]];
+ qrib.innerHTML=qopts.map(x=>'<button type="button" data-qf="'+x[0]+'" class="'+(QF==x[0]?"on":"")+'">'+x[1]+'</button>').join("");
+ qrib.querySelectorAll("button").forEach(b=>b.onclick=function(){QF=b.getAttribute("data-qf");GF="";draw()});
+ var gl=D.games.filter(g=>!g.done||g.ap_h||g.ap_a).slice(0,28);
+ gmrib.innerHTML='<button type="button" data-gf="" class="'+(!GF?"on":"")+'">All Matchups</button>'+gl.map(g=>{var h=D.teams[g.h],a=D.teams[g.a];var lb=(g.ap_a?"#"+g.ap_a+" ":"")+a.ab+" @ "+(g.ap_h?"#"+g.ap_h+" ":"")+h.ab;return '<button type="button" data-gf="'+g.id+'" class="'+(GF==String(g.id)?"on":"")+'">'+E(lb)+'</button>'}).join("");
+ gmrib.querySelectorAll("button").forEach(b=>b.onclick=function(){GF=b.getAttribute("data-gf")||"";draw()});
+}
+function draw(){
+ renderRibs();
+ var G=D.games.filter(function(g){
+  if(cf.value&&D.teams[g.h].conf!=cf.value&&D.teams[g.a].conf!=cf.value)return false;
+  if(GF&&String(g.id)!=GF)return false;
+  if(QF=="top25"&&!g.ap_h&&!g.ap_a)return false;
+  if(QF=="edge"&&Math.abs(g.edge||0)<0.03)return false;
+  if(QF=="live"&&g.done)return false;
+  if(QF=="wx"&&(!g.wx||(g.wx.kind!="wind"&&g.wx.kind!="rain"&&g.wx.kind!="cold"&&g.wx.kind!="dome")))return false;
+  return true;
+ });
+ G.sort(so.value=="e"?(a,b)=>Math.abs(b.edge||0)-Math.abs(a.edge||0):(a,b)=>(a.done-b.done)||(a.t<b.t?-1:1));
+ out.innerHTML=G.map(function(g){var T=D.teams,hp=g.ours_p;function rw(t,me,p,ap){return '<div class="row">'+CFB.logo(t,26)+'<b><a href="power.html#t'+t+'" style="color:inherit;text-decoration:none">'+(ap?'<span class="ap-tag">#'+ap+'</span>':'')+E(T[t].nm)+'</a></b><span class="mut sm">'+E(T[t].conf||"FCS")+'</span><span style="font-weight:800">'+(g.done?(me?g.hs:g.as_):(p*100).toFixed(0)+"%")+'</span></div>'}
+ var sideLab=g.edge!=null?(g.edge>=0?T[g.h].ab+" ML / "+sp(g.bk_sp):T[g.a].ab+" / "+sp(g.bk_sp!=null?-g.bk_sp:null)):"";
+ var bestAm=(g.edge!=null&&g.edge>=0&&g.best_ml)?g.best_ml[0]:null;
+ return '<div class="card gm"><div class="mut sm">'+(g.done?E(g.st):CFB.fmtT(g.t))+(g.neu?" · Neutral":"")+'</div>'+rw(g.a,0,1-hp,g.ap_a)+rw(g.h,1,hp,g.ap_h)+CFB.badgesHtml(g.badges)+'<div class="cmp"><div><div class="l">Our spread ('+E(T[g.h].ab)+')</div><b>'+sp(-g.ours_sp)+'</b></div><div><div class="l">Book spread</div><b>'+sp(g.bk_sp)+'</b></div><div><div class="l">Total</div><b>'+(g.bk_tot==null?"—":g.bk_tot)+'</b></div><div><div class="l">Our '+E(T[g.h].ab)+' win</div><b>'+CFB.pc(hp)+'</b></div><div><div class="l">Book fair</div><b>'+CFB.pc(g.bk_fair)+'</b></div><div><div class="l">'+(g.best_ml?"Best "+E(T[g.h].ab)+" ML":"Edge")+'</div><b>'+(g.best_ml?CFB.am(g.best_ml[0])+' <span class="mut sm">'+E(g.best_ml[1])+'</span>':"—")+'</b></div></div><div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between">'+CFB.edge(g.edge)+'<span class="mut sm">'+(g.nb?g.nb+" books":"")+'</span></div>'+CFB.stakeHtml(hp,g.bk_fair,bestAm,sideLab)+'</div>'}).join("")||'<p class="mut">No games match these filters.</p>'}
+CFB.kellyBar(document.getElementById("kbar"),draw);
 cf.onchange=so.onchange=draw;draw()})</script></body></html>

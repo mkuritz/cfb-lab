@@ -4,3 +4,21 @@
 .cmp{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}.cmp div{background:var(--panel2);border-radius:10px;padding:6px;text-align:center}.cmp .l{font-size:10px;color:var(--mut);text-transform:uppercase;font-weight:800;letter-spacing:.05em}
 .gcell{color:#fff;font-weight:800;text-align:center;border-radius:6px}
 .ctl{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.ctl select,.ctl input{flex:1;min-width:120px}
+.kbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 12px;margin:10px 0;font-size:12.5px}
+.kbar label{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--mut)}
+.kbar input{width:88px;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:4px 8px;font-weight:800;font-size:12.5px}
+.kbar .kbtns{display:inline-flex;gap:4px;flex-wrap:wrap}
+.kbar .kbtns button{background:var(--panel2);border:1px solid var(--line);color:var(--mut);border-radius:8px;padding:4px 9px;font-size:11.5px;font-weight:800;cursor:pointer}
+.kbar .kbtns button.on{border-color:var(--acc,#38d0f0);color:var(--txt);background:#172b4d}
+.grib{display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px;margin:6px 0;scrollbar-width:thin}
+.grib button{flex:0 0 auto;background:var(--panel2);border:1px solid var(--line);color:var(--mut);border-radius:999px;padding:4px 11px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.grib button.on{border-color:var(--acc,#38d0f0);color:var(--txt);background:#172b4d}
+.cbadges{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+.cbadge{display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;border:1px solid var(--line);background:#14223d;color:#d6e2ff;line-height:1.35}
+.cbadge.exp{background:#f59e0b1f;border-color:#f59e0b55;color:#fcd34d}
+.cbadge.trench{background:#38d0f01f;border-color:#38d0f055;color:#7dd3fc}
+.cbadge.rz{background:#ff5d6c1f;border-color:#ff5d6c55;color:#fda4af}
+.cbadge.wx{background:#8ee04a1f;border-color:#8ee04a55;color:#bef264}
+.krow{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;margin-top:7px;padding:5px 8px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;font-size:11.5px}
+.krow .kst{color:#8ee04a;font-weight:800}
+.ap-tag{display:inline-block;font-size:10px;font-weight:800;padding:1px 5px;border-radius:5px;background:#38d0f022;color:#7dd3fc;margin-right:3px}
