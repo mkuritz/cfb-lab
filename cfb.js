@@ -20,25 +20,56 @@ function kellyBar(el,cb){
  if(inp)inp.onchange=function(){var v=Math.max(10,parseFloat(inp.value)||1000);KS.bk=v;saveK();if(cb)cb()};
  el.querySelectorAll("[data-km]").forEach(function(b){b.onclick=function(){KS.m=parseFloat(b.getAttribute("data-km"));saveK();kellyBar(el,cb);if(cb)cb()}});
 }
+var WDIR_ARROW={N:"↓",NNE:"↙",NE:"↙",ENE:"←",E:"←",ESE:"↖",SE:"↖",SSE:"↑",S:"↑",SSW:"↗",SW:"↗",WSW:"→",W:"→",WNW:"↘",NW:"↘",NNW:"↓"};
+function wxPillHtml(wx){
+ if(!wx)return"";
+ if(wx.indoor)return '<span class="cbadge wx">🏟️ Dome · Fast Track (+Pass)</span>';
+ var arr=WDIR_ARROW[wx.wind_dir]||"↗";
+ var wnd=wx.wind!=null?Math.round(wx.wind):0;
+ var tag=wx.kind=="wind"?"Pass/FG Drag":wx.kind=="rain"?"Wet Ball · Rush Boost":wx.kind=="cold"?"Cold Track":wx.kind=="heat"?"Warm Track":"Clean Track";
+ return '<span class="cbadge wx" title="'+E(wx.txt||"")+'">'+(wx.kind=="wind"?"🌬️":wx.kind=="rain"?"🌧️":"🌤️")+' '+(wx.temp!=null?wx.temp+"°F · ":"")+'Wind '+wnd+' mph '+(wx.wind_dir?arr+" "+E(wx.wind_dir)+" · ":"")+E(tag)+'</span>';
+}
 function badgesHtml(arr){
  if(!arr||!arr.length)return"";
- return '<div class="cbadges">'+arr.map(function(b){return '<span class="cbadge '+E(b.kind||"")+'">'+E(b.txt)+'</span>'}).join("")+'</div>';
+ var top=arr.filter(function(b){return b.kind!="wx"}).slice(0,1);
+ var wx=arr.filter(function(b){return b.kind=="wx"})[0];
+ return '<div class="cbadges">'+top.map(function(b){return '<span class="cbadge '+E(b.kind||"")+'">'+E(b.txt)+'</span>'}).join("")+(wx?'<span class="cbadge wx">'+E(wx.txt)+'</span>':'')+'</div>';
+}
+function gameVizHtml(g){
+ if(!D||!D.units||!D.teams)return badgesHtml(g.badges);
+ var U=D.units,a=String(g.a),h=String(g.h);
+ var aab=(D.teams[a]||{}).ab||"AWY",hab=(D.teams[h]||{}).ab||"HME";
+ var u=function(k,t){return (U[k]&&U[k][t]!=null)?U[k][t]:50};
+ var expA=u("Explosiveness",a),expH=u("Explosiveness",h);
+ var trA=Math.round((u("Pass block",a)+u("Run block",a)+u("Havoc",a))/3);
+ var trH=Math.round((u("Pass block",h)+u("Run block",h)+u("Havoc",h))/3);
+ var rzA=Math.round(u("EPA offense",a)*0.65+(100-u("EPA defense",h))*0.35);
+ var rzH=Math.round(u("EPA offense",h)*0.65+(100-u("EPA defense",a))*0.35);
+ function mRow(lbl,vA,vH){
+  var tot=Math.max(1,vA+vH),wA=Math.round(vA/tot*100),wH=100-wA;
+  return '<div class="cm-row"><span class="rk-pill '+(vA>=vH?"win":"")+'">'+E(aab)+' '+vA+'</span><div class="cm-mid"><span class="cm-lbl">'+lbl+'</span><div class="cm-bar"><i class="a" style="width:'+wA+'%"></i><i class="h" style="width:'+wH+'%"></i></div></div><span class="rk-pill r '+(vH>vA?"win":"")+'">'+vH+' '+E(hab)+'</span></div>';
+ }
+ var topB=(g.badges||[]).filter(function(b){return b.kind!="wx"})[0];
+ var pillStrip='<div class="cbadges">'+(topB?'<span class="cbadge '+E(topB.kind)+'">'+E(topB.txt.split("(")[0].trim())+'</span>':'')+wxPillHtml(g.wx)+'</div>';
+ return '<div class="cfb-viz-meter">'+mRow("💥 Explosive",expA,expH)+mRow("🛡️ Trenches",trA,trH)+mRow("🚨 Red Zone",rzA,rzH)+'</div>'+pillStrip;
 }
 function stakeHtml(oursP,fairP,amOdds,sideLabel){
  if(oursP==null||fairP==null)return"";
  var diff=oursP-fairP;
- if(Math.abs(diff)<0.008)return '<div class="krow"><span class="mut">Fair vs Market: aligned ('+pc(oursP)+' vs '+pc(fairP)+')</span><span class="mut">$0 Pass</span></div>';
- var p=diff>0?oursP:(1-oursP),q=diff>0?fairP:(1-fairP),ed=p-q;
+ var p=diff>=0?oursP:(1-oursP),q=diff>=0?fairP:(1-fairP),ed=p-q;
+ var pW=Math.min(100,Math.max(4,Math.round(p*1000)/10)),qW=Math.min(97,Math.max(3,Math.round(q*1000)/10));
+ var gauge='<div class="cfb-edge-viz" title="Our Fair '+pc(p)+' vs Book Fair '+pc(q)+'"><div class="cev-hd"><span>📊 Our Fair <b>'+pc(p)+'</b>'+(sideLabel?" ("+E(sideLabel)+")":"")+'</span><span>Book Fair <b>'+pc(q)+'</b> · <b class="'+(ed>=0.008?"up":"mut")+'">'+(ed>=0?"+":"")+(ed*100).toFixed(1)+'% Edge</b></span></div><div class="cev-track"><div class="cev-fill" style="width:'+pW+'%"></div><div class="cev-tick" style="left:'+qW+'%" title="Book Fair '+pc(q)+'"></div></div></div>';
+ if(Math.abs(diff)<0.008)return gauge+'<div class="krow"><span class="mut">Fair vs Market: aligned ('+pc(oursP)+' vs '+pc(fairP)+')</span><span class="mut">$0 Pass</span></div>';
  var bDec=(diff>0&&amOdds!=null)?(amOdds>0?amOdds/100:100/-amOdds):(100/110);
  var f=Math.max(0,(p*bDec-(1-p))/bDec);
  var frac=KS.m===0?0.01:Math.min(0.05,f*KS.m);
  var stake=Math.round(KS.bk*frac*100)/100;
  var evPct=((p*(bDec+1)-1)*100);
  if(stake<=0&&ed>0.01){stake=Math.round(KS.bk*Math.min(0.03,ed*(KS.m||0.25))*100)/100}
- return '<div class="krow"><span class="kst">💵 Stake $'+stake.toFixed(2)+(sideLabel?" · "+E(sideLabel):"")+'</span><span class="mut">Fair <b>'+pc(p)+'</b> vs Mkt <b>'+pc(q)+'</b> ('+(ed>=0?"+":"")+(ed*100).toFixed(1)+'% edge'+(evPct>0?' · +$'+Math.max(0.1,stake*Math.max(ed,evPct/100)).toFixed(2)+' EV':'')+')</span></div>';
+ return gauge+'<div class="krow"><span class="kst">💵 Stake $'+stake.toFixed(2)+(sideLabel?" · "+E(sideLabel):"")+'</span><span class="mut">Fair <b>'+pc(p)+'</b> vs Mkt <b>'+pc(q)+'</b> ('+(ed>=0?"+":"")+(ed*100).toFixed(1)+'% edge'+(evPct>0?' · +$'+Math.max(0.1,stake*Math.max(ed,evPct/100)).toFixed(2)+' EV':'')+')</span></div>';
 }
 
-window.CFB={data:data,E:E,ord:ord,fmtT:fmtT,am:am,pc:pc,head:head,logo:logo,edge:edge,ini:ini,kellyBar:kellyBar,badgesHtml:badgesHtml,stakeHtml:stakeHtml};
+window.CFB={data:data,E:E,ord:ord,fmtT:fmtT,am:am,pc:pc,head:head,logo:logo,edge:edge,ini:ini,kellyBar:kellyBar,badgesHtml:badgesHtml,gameVizHtml:gameVizHtml,wxPillHtml:wxPillHtml,stakeHtml:stakeHtml};
 function bar(){if(document.getElementById("v2bar"))return;var C=window.SLTOP;if(!C)return;var pg=(location.pathname.split("/").pop()||"index.html").replace(".html","");if(pg=="player")pg="players";
  var b=document.createElement("header");b.id="v2bar";b.setAttribute("role","banner");
  var sp=C.sports.map(function(x){return x[2]==C.cur?'<a class="on" aria-current="page" href="'+x[1]+'">'+x[0]+'</a>':'<a href="'+x[1]+'" data-sp="'+x[2]+'">'+x[0]+'</a>'}).join("");
