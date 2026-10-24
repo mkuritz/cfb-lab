@@ -11,8 +11,15 @@ function logo(t,sz){var x=D&&D.teams[t];return x&&x.logo?'<img class="tl" src="'
 function edge(e){return e==null?'<span class="edge" title="Needs 2+ books">EDGE —</span>':'<span class="edge '+(e>=0?"p":"n")+'">EDGE '+(e>=0?"+":"")+(e*100).toFixed(1)+'%</span>'}
 
 var KS={bk:1000,m:0.25};
-try{var sv=JSON.parse(localStorage.getItem("sl_cfb_kelly")||"null");if(sv&&sv.bk>0)KS=sv}catch(e){}
-function saveK(){try{localStorage.setItem("sl_cfb_kelly",JSON.stringify(KS))}catch(e){}}
+try{
+ var sv=JSON.parse(localStorage.getItem("sl_cfb_kelly")||"null");
+ if(sv&&sv.bk>0)KS=sv;
+ var uBk=parseFloat(localStorage.getItem("sl_bankroll")||"");
+ var uKm=parseFloat(localStorage.getItem("sl_kelly")||"");
+ if(uBk>0)KS.bk=uBk;
+ if([0.25,0.5,1,1.0,0].includes(uKm))KS.m=uKm;
+}catch(e){}
+function saveK(){try{localStorage.setItem("sl_cfb_kelly",JSON.stringify(KS));localStorage.setItem("sl_bankroll",String(KS.bk));if(KS.m>0)localStorage.setItem("sl_kelly",String(KS.m))}catch(e){}}
 function kellyBar(el,cb){
  if(!el)return;
  el.innerHTML='<div class="kbar"><label>💰 Bankroll ($)<input type="number" id="cfb-bk" min="50" step="50" value="'+KS.bk+'"></label><div class="kbtns" role="group" aria-label="Kelly multiplier">'+[[0.25,"0.25x Kelly"],[0.5,"0.5x Kelly"],[1.0,"1.0x Full"],[0,"Flat 1%"]].map(function(x){return '<button type="button" data-km="'+x[0]+'" class="'+(KS.m===x[0]?"on":"")+'">'+x[1]+'</button>'}).join("")+'</div><span class="mut sm" style="margin-left:auto">Exact $ stake &amp; Fair vs. Market Line Edge on every card (capped at 5% bankroll)</span></div>';
@@ -45,13 +52,14 @@ function gameVizHtml(g){
  var trH=Math.round((u("Pass block",h)+u("Run block",h)+u("Havoc",h))/3);
  var rzA=Math.round(u("EPA offense",a)*0.65+(100-u("EPA defense",h))*0.35);
  var rzH=Math.round(u("EPA offense",h)*0.65+(100-u("EPA defense",a))*0.35);
- function mRow(lbl,vA,vH){
+ var gid=a+"@"+h;
+ function mRow(lbl,vA,vH,cat){
   var tot=Math.max(1,vA+vH),wA=Math.round(vA/tot*100),wH=100-wA;
-  return '<div class="cm-row"><span class="rk-pill '+(vA>=vH?"win":"")+'">'+E(aab)+' '+vA+'</span><div class="cm-mid"><span class="cm-lbl">'+lbl+'</span><div class="cm-bar"><i class="a" style="width:'+wA+'%"></i><i class="h" style="width:'+wH+'%"></i></div></div><span class="rk-pill r '+(vH>vA?"win":"")+'">'+vH+' '+E(hab)+'</span></div>';
+  return '<div class="cm-row" data-cgame="'+E(gid)+'" data-ccat="'+cat+'" title="Tap to jump to '+E(aab+' @ '+hab)+' player props"><span class="rk-pill '+(vA>=vH?"win":"")+'">'+E(aab)+' '+vA+'</span><div class="cm-mid"><span class="cm-lbl">'+lbl+' ↗</span><div class="cm-bar"><i class="a" style="width:'+wA+'%"></i><i class="h" style="width:'+wH+'%"></i></div></div><span class="rk-pill r '+(vH>vA?"win":"")+'">'+vH+' '+E(hab)+'</span></div>';
  }
  var topB=(g.badges||[]).filter(function(b){return b.kind!="wx"})[0];
  var pillStrip='<div class="cbadges">'+(topB?'<span class="cbadge '+E(topB.kind)+'">'+E(topB.txt.split("(")[0].trim())+'</span>':'')+wxPillHtml(g.wx)+'</div>';
- return '<div class="cfb-viz-meter">'+mRow("💥 Explosive",expA,expH)+mRow("🛡️ Trenches",trA,trH)+mRow("🚨 Red Zone",rzA,rzH)+'</div>'+pillStrip;
+ return '<div class="cfb-viz-meter" data-cgame="'+E(gid)+'" title="Tap any mismatch meter to filter '+E(aab+' @ '+hab)+' player props">'+mRow("💥 Explosive",expA,expH,"pass")+mRow("🛡️ Trenches",trA,trH,"rush")+mRow("🚨 Red Zone",rzA,rzH,"all")+'</div>'+pillStrip;
 }
 function stakeHtml(oursP,fairP,amOdds,sideLabel){
  if(oursP==null||fairP==null)return"";
@@ -69,6 +77,14 @@ function stakeHtml(oursP,fairP,amOdds,sideLabel){
  return gauge+'<div class="krow"><span class="kst">💵 Stake $'+stake.toFixed(2)+(sideLabel?" · "+E(sideLabel):"")+'</span><span class="mut">Fair <b>'+pc(p)+'</b> vs Mkt <b>'+pc(q)+'</b> ('+(ed>=0?"+":"")+(ed*100).toFixed(1)+'% edge'+(evPct>0?' · +$'+Math.max(0.1,stake*Math.max(ed,evPct/100)).toFixed(2)+' EV':'')+')</span></div>';
 }
 
+document.addEventListener("click",function(e){
+ var cr=e.target.closest("[data-cgame]");
+ if(cr){
+  e.stopPropagation();
+  var gVal=cr.getAttribute("data-cgame"),cVal=cr.getAttribute("data-ccat")||"";
+  location.href="props.html?game="+encodeURIComponent(gVal)+(cVal?"&cat="+encodeURIComponent(cVal):"");
+ }
+});
 window.CFB={data:data,E:E,ord:ord,fmtT:fmtT,am:am,pc:pc,head:head,logo:logo,edge:edge,ini:ini,kellyBar:kellyBar,badgesHtml:badgesHtml,gameVizHtml:gameVizHtml,wxPillHtml:wxPillHtml,stakeHtml:stakeHtml};
 function bar(){if(document.getElementById("v2bar"))return;var C=window.SLTOP;if(!C)return;var pg=(location.pathname.split("/").pop()||"index.html").replace(".html","");if(pg=="player")pg="players";
  var b=document.createElement("header");b.id="v2bar";b.setAttribute("role","banner");
