@@ -1,0 +1,26 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lines & Injuries · CFB Hub · Sports Labs</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="v2.css"><link rel="stylesheet" href="cfb.css"><script src="sl-sports.js"></script><script src="navcfg.js"></script><script src="tailcard.js?v=1"></script><script src="cfb.js"></script></head><body><div class="w"><h2 style="margin-top:14px">📉 Lines, Trench Matchups &amp; Injury Prop Cascades</h2><p class="mut sm" id="sub"></p>
+<div class="grib" id="gsel" aria-label="Game selector"></div>
+<div id="out"></div>
+<footer>Spreads and totals compare opening/consensus market numbers with our Sports Labs ratings line. Trench matchup percentiles use opponent-adjusted Pass Block, Run Block, Stuff Rate, Line Yards, and Defensive Havoc. Tap any player to open their Usage &amp; Game Log Drawer.</footer></div><script>CFB.data(function(D){
+ var E=CFB.E,L=D.line_impact||[],sel="";
+ sub.textContent="Week "+D.next+" Featured Slate ("+L.length+" games) · Opening vs. Current Spreads, Stadium Weather, O-Line vs. D-Line Trench Advantages & Starter Prop Impact Cascades.";
+ function draw(){
+  gsel.innerHTML='<button type="button" class="'+(sel===""?"on":"")+'" data-k="">All Featured Games ('+L.length+')</button>'+L.map(g=>'<button type="button" class="'+(sel===g.key?"on":"")+'" data-k="'+E(g.key)+'">'+E(g.short)+'</button>').join("");
+  gsel.querySelectorAll("button").forEach(b=>b.onclick=function(){sel=b.getAttribute("data-k")||"";draw()});
+  var show=L.filter(g=>!sel||g.key===sel);
+  out.innerHTML=show.map(function(g){
+   var injHtml=g.injuries&&g.injuries.length?'<table><tr><th>Player</th><th>Team · Pos</th><th>Status</th><th>Report &amp; Depth Impact</th></tr>'+g.injuries.map(x=>'<tr><td><b>'+E(x.player)+'</b></td><td>'+E(x.team)+' '+E(x.pos)+'</td><td><span class="role-pill bn">'+E(x.status)+'</span></td><td class="sm mut">'+E(x.note)+'</td></tr>').join("")+'</table>':'<p class="mut sm" style="margin:4px 0">No starter availability exclusions reported on this matchup; full starting unit projected active.</p>';
+   var trHtml=(g.trench||[]).map(t=>'<div style="padding:7px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;margin:5px 0"><div style="font-weight:800;font-size:12.5px">🛡️ '+E(t.dir)+'</div><div class="sm mut" style="margin-top:2px">'+E(t.skr)+' · <b style="color:'+(t.impact.indexOf("▲")>=0?"#8ee04a":"#ff5d6c")+'">'+E(t.impact)+'</b></div></div>').join("");
+   var intHtml=(g.intel&&g.intel.length)?'<table><tr><th>Starter</th><th>Role</th><th>Prop Direction</th><th>Target Market</th><th>Matchup &amp; Usage Note</th></tr>'+g.intel.map(x=>'<tr><td><a href="#" class="plink" data-cfb-player="'+E(x.aid)+'" style="color:inherit;font-weight:800">'+E(x.name)+'</a> <span class="mut sm">'+E(x.team)+'</span></td><td><span class="role-pill st">'+E(x.role)+'</span></td><td><b class="'+(x.dir==="up"?"up":"dn")+'">'+(x.dir==="up"?"▲ Up":"▼ Down")+'</b></td><td><b>'+E(x.markets.join(", "))+'</b></td><td class="sm mut">'+E(x.note)+'</td></tr>').join("")+'</table>':'';
+   return '<div class="card" style="margin-bottom:12px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><b style="font-size:16.5px">'+E(g.game)+'</b><span class="mut sm">'+CFB.fmtT(g.kick)+' · <a href="props.html?game='+encodeURIComponent(g.gid)+'" style="color:#38d0f0">All Game Props →</a></span></div>'
+    +'<div class="cmp" style="margin-top:8px"><div><div class="l">Opening Line</div><b>'+E(g.open_line)+'</b></div><div><div class="l">Current Consensus</div><b>'+E(g.cur_line)+'</b></div><div><div class="l">Sports Labs Model</div><b>'+E(g.sl_line)+'</b></div></div>'
+    +'<div class="sm mut" style="margin-top:6px"><b>Track / Weather:</b> '+E(g.wx)+'</div>'
+    +'<h3 style="margin:12px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8">🛡️ Trench Matchups (O-Line vs. Defensive Havoc)</h3>'+trHtml
+    +'<h3 style="margin:12px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8">🩹 Injury &amp; Availability Report</h3>'+injHtml
+    +(intHtml?'<h3 style="margin:12px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8">🎯 Starter Prop Impact Cascades</h3><div class="wrap">'+intHtml+'</div>':'')
+    +'</div>';
+  }).join("");
+ }
+ draw();
+})</script></body></html>

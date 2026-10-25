@@ -1,0 +1,37 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Betting & Prop Trends · CFB Hub · Sports Labs</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="v2.css"><link rel="stylesheet" href="cfb.css"><script src="sl-sports.js"></script><script src="navcfg.js"></script><script src="tailcard.js?v=1"></script><script src="cfb.js"></script></head><body><div class="w"><h2 style="margin-top:14px">📈 CFB Prop Hit-Rate Streaks &amp; Team Trends</h2><p class="mut sm" id="sub"></p>
+<div class="tabs" id="vtabs" style="margin:10px 0"><button type="button" class="on" data-vt="streaks">🔥 Player Prop Streaks (4/5 &amp; 5/5 L5)</button><button type="button" data-vt="matchups">🏈 This Week's Matchup Trends</button><button type="button" data-vt="teams">📊 Team EPA, Margin &amp; Situational Splits</button></div>
+<div class="ctl"><input class="v2" id="q" placeholder="Filter player, team or conference…" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:7px 10px"></div>
+<div id="out"></div>
+<footer>Prop streaks track verified FBS starters over their last 5 games against this week's prop line. Team EPA/play and situational ratings have garbage time removed. Tap any player to open their Usage &amp; Game Log Drawer.</footer></div><script>CFB.data(function(D){
+ var E=CFB.E,TR=D.trends||{},VT="streaks";
+ sub.textContent=(TR.streaks||[]).length+" active L5 player prop streaks (80%–100% hit rate) + "+(TR.matchups||[]).length+" featured matchup trend breakdowns & all "+D.power.length+" FBS team EPA splits.";
+ function drawStreaks(s){
+  var S=(TR.streaks||[]).filter(x=>!s||(x.nm+" "+x.ab+" "+x.opp_ab+" "+x.mk).toLowerCase().indexOf(s)>=0);
+  out.innerHTML='<div class="card wrap" style="padding:0"><table><tr><th>Player</th><th>Role &amp; Shares</th><th>Matchup &amp; DVP</th><th>Market &amp; Line</th><th>Our Proj</th><th>L5 Hit Rate</th><th>L5 Game Log Values</th><th>Edge</th><th>Slip</th></tr>'+S.map(function(x){
+   return '<tr><td><a href="#" class="plink" data-cfb-player="'+x.aid+'" style="color:inherit;font-weight:800">'+E(x.nm)+'</a> <span class="mut sm">'+E(x.ab)+'</span></td><td>'+CFB.roleBadge(x)+'</td><td class="sm mut">vs '+E(x.opp_ab)+' (#'+x.dvp_rk+' '+E(x.pos)+' D)</td><td><b>'+E(x.side)+' '+x.line+' '+E(x.mk)+'</b></td><td><b>'+x.proj+'</b></td><td><span class="hit-pill">'+E(x.hit_l5)+' L5</span></td><td class="sm"><code>'+x.l5_vals.join(" · ")+'</code></td><td>'+CFB.edge(x.edge)+'</td><td><a class="sl-bl-btn" href="https://betlab.sportslabshq.com/?sport=cfb&amp;addleg='+encodeURIComponent(x.aid+"|"+x.mk)+'" target="_blank" rel="noopener">➕ Slip</a></td></tr>';
+  }).join("")+'</table></div>';
+ }
+ function drawMatchups(s){
+  var M=(TR.matchups||[]).filter(x=>!s||x.matchup.toLowerCase().indexOf(s)>=0||x.bullets.join(" ").toLowerCase().indexOf(s)>=0);
+  out.innerHTML='<div class="gl">'+M.map(function(m){
+   return '<div class="card" style="margin:0;padding:12px"><div style="display:flex;justify-content:space-between;align-items:center"><b>'+E(m.matchup)+'</b><span class="mut sm">'+CFB.fmtT(m.time)+'</span></div><div class="mut sm" style="margin:4px 0">Line: <b>'+E(m.spread)+'</b> · Total: <b>'+(m.total||"—")+'</b> · '+CFB.edge(m.edge)+'</div><ul style="padding-left:18px;margin:8px 0;font-size:12.5px;line-height:1.5">'+m.bullets.map(b=>'<li>'+E(b)+'</li>').join("")+'</ul><a href="props.html?game='+encodeURIComponent(m.gid)+'" class="chip sm" style="text-decoration:none;font-size:11px">View Matchup Props →</a></div>';
+  }).join("")+'</div>';
+ }
+ function drawTeams(s){
+  var U=D.units||{};
+  var R=D.power.filter(r=>!s||(r.nm+" "+r.ab+" "+r.conf).toLowerCase().indexOf(s)>=0);
+  out.innerHTML='<div class="card wrap" style="padding:0"><table><tr><th>#</th><th>Team</th><th>Conf</th><th>SU Rec</th><th>Conf Rec</th><th>Avg Margin</th><th>Off EPA/play</th><th>Def EPA/play</th><th>Explosive %ile</th><th>Havoc %ile</th><th>Playoff %</th></tr>'+R.map((r,i)=>{
+   var exp=(U["Explosiveness"]||{})[r.id]||50,hav=(U["Havoc"]||{})[r.id]||50;
+   return '<tr><td>'+(i+1)+'</td><td>'+CFB.logo(r.id,18)+' <b><a href="power.html#t'+r.id+'" style="color:inherit">'+E(r.nm)+'</a></b>'+(r.ap?' <span class="ap-tag">#'+r.ap+'</span>':'')+'</td><td class="sm mut">'+E(r.conf)+'</td><td><b>'+E(r.rec)+'</b></td><td class="sm mut">'+E(r.crec)+'</td><td class="'+(r.mar>=0?"up":"dn")+'"><b>'+(r.mar>0?"+":"")+r.mar.toFixed(1)+'</b></td><td>'+(r.off>0?"+":"")+r.off.toFixed(3)+'</td><td>'+(r.de>0?"+":"")+r.de.toFixed(3)+'</td><td>'+exp+'th</td><td>'+hav+'th</td><td>'+Math.round((r.cfp||0)*100)+'%</td></tr>';
+  }).join("")+'</table></div>';
+ }
+ function draw(){
+  var s=(q.value||"").toLowerCase().trim();
+  document.querySelectorAll("#vtabs button").forEach(b=>b.classList.toggle("on",b.dataset.vt===VT));
+  if(VT==="streaks")drawStreaks(s);
+  else if(VT==="matchups")drawMatchups(s);
+  else drawTeams(s);
+ }
+ vtabs.onclick=function(e){var b=e.target.closest("[data-vt]");if(b){VT=b.dataset.vt;draw()}};
+ q.oninput=draw;draw();
+})</script></body></html>

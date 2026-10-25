@@ -1,0 +1,63 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Anytime TD · CFB Hub · Sports Labs</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="v2.css"><link rel="stylesheet" href="cfb.css"><script src="sl-sports.js"></script><script src="navcfg.js"></script><script src="tailcard.js?v=1"></script><script src="cfb.js"></script></head><body><div class="w"><h2 style="margin-top:14px">🎯 Anytime TD Board</h2><p class="mut sm" id="sub"></p>
+<div class="card"><h3>🔥 Top Projected Starter TDs on the Slate</h3><div id="mb"></div></div>
+<div class="card"><h3>🏈 Full Week Anytime TD Projections <span class="mut sm" id="meta"></span></h3>
+<div class="mut sm">Verified starters only (QB1 dual-threat, RB1 or committee RB2, WR1-3, TE1). Built from 2026 season TD rate, carry/target share, team implied points, and opponent positional red-zone DVP.</div>
+<div class="ctl"><input class="v2" id="q" placeholder="Search player, team or matchup…" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:7px 10px"><select class="v2" id="fg"><option value="">All games</option></select><select class="v2" id="fp"><option value="">All positions</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option></select><select class="v2" id="fr"><option value="">All tiers</option><option>Bet</option><option>Lean</option><option>Pass</option></select><select class="v2" id="so"><option value="p">Sort: TD Chance</option><option value="ev">Sort: Edge (EV)</option><option value="td">Sort: Season TDs</option></select></div>
+<div id="out"></div></div>
+<footer>Sports Labs CFB Touchdown Poisson model. Prices reflect benchmark market availability across tracked books. Tap any player to open their Usage &amp; Game Log Drawer.</footer></div><script>CFB.data(function(D){
+ var E=CFB.E,R=D.atd||[],MB=D.atd_mostbet||[];
+ sub.textContent=R.length+" verified FBS starters priced for Anytime TD across this week's featured games.";
+ fg.innerHTML+=[...new Set(R.map(r=>r.matchup))].map(g=>"<option>"+E(g)+"</option>").join("");
+ mb.innerHTML='<div class="wrap"><table><tr><th>#</th><th>Player</th><th>Role &amp; Shares</th><th>Matchup</th><th>Season TDs</th><th>Our TD Chance</th><th>No-Vig</th><th>Best Price</th></tr>'+MB.map(function(r,i){
+  return '<tr><td><b>'+(i+1)+'</b></td><td><a href="#" class="plink" data-cfb-player="'+r.aid+'" style="color:inherit;font-weight:800">'+E(r.player)+'</a> <span class="mut sm">'+E(r.team)+' '+E(r.pos)+'</span></td><td>'+CFB.roleBadge(r)+'</td><td class="sm mut">'+E(r.matchup)+' · '+CFB.fmtT(r.time)+'</td><td><b>'+r.td_season+'</b> in '+r.gp+'G</td><td><b style="color:#8ee04a">'+CFB.pc(r.p)+'</b></td><td>'+CFB.pc(r.nv)+'</td><td><b>'+CFB.am(r.price)+'</b> <span class="mut sm">'+E(r.book)+'</span></td></tr>';
+ }).join("")+'</table></div>';
+ function draw(){
+  var s=(q.value||"").toLowerCase().trim();
+  var L=R.filter(function(r){
+   if(fg.value&&r.matchup!==fg.value)return false;
+   if(fp.value&&r.pos!==fp.value)return false;
+   if(fr.value&&r.tier!==fr.value)return false;
+   if(s&&(r.player+" "+r.team+" "+r.matchup+" "+r.role).toLowerCase().indexOf(s)<0)return false;
+   return true;
+  });
+  L.sort(function(a,b){
+   if(so.value==="ev")return (b.ev||0)-(a.ev||0);
+   if(so.value==="td")return (b.td_season||0)-(a.td_season||0);
+   return (b.p||0)-(a.p||0);
+  });
+  meta.textContent="("+L.length+" of "+R.length+" starters)";
+  out.innerHTML='<div class="gl">'+L.map(function(r){
+   var T=D.teams[r.tid]||{};
+   var tCol=r.tier==="Bet"?"#8ee04a":(r.tier==="Lean"?"#38d0f0":"#94a3b8");
+   return '<div class="card" style="margin:0;padding:12px">'
+    +'<div style="display:flex;gap:10px;align-items:center">'+CFB.head(r.aid,r.player,r.hs,T.col,44)
+    +'<div style="flex:1;min-width:0"><div style="font-weight:800"><span class="role-pill" style="background:'+tCol+'22;color:'+tCol+';border:1px solid '+tCol+'55;margin-right:5px">'+E(r.tier)+'</span><a href="#" class="plink" data-cfb-player="'+r.aid+'" style="color:inherit">'+E(r.player)+'</a> '+CFB.logo(r.tid,16)+'</div>'
+    +'<div style="margin-top:2px">'+CFB.roleBadge(r)+'</div>'
+    +'<div class="mut sm" style="margin-top:2px">'+E(r.matchup)+' · '+CFB.fmtT(r.time)+'</div></div>'
+    +'<div style="text-align:right"><div style="font-size:18px;font-weight:900;color:#8ee04a">'+CFB.pc(r.p)+'</div><div class="mut sm">OUR TD %</div></div></div>'
+    +'<div class="cmp" style="margin-top:8px"><div><div class="l">Season TDs</div><b>'+r.td_season+' in '+r.gp+'G</b></div><div><div class="l">No-Vig Fair</div><b>'+CFB.pc(r.nv)+'</b></div><div><div class="l">Best Price</div><b>'+CFB.am(r.price)+' ('+E(r.book)+')</b></div></div>'
+    +'<div class="mut sm" style="margin-top:6px;line-height:1.35">'+E(r.why)+'</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">'+CFB.edge(r.ev)+'<div style="display:flex;gap:6px"><a class="sl-bl-btn" href="https://betlab.sportslabshq.com/?sport=cfb&amp;addleg='+encodeURIComponent(r.aid+"|Anytime TD")+'" target="_blank" rel="noopener">➕ Bet Lab Slip</a><button type="button" class="sl-tail-btn" data-atd-tail="'+E(r.aid)+'">📸 Card</button></div></div>'
+    +'</div>';
+  }).join("")+'</div>';
+ }
+ document.addEventListener("click",function(e){
+  var tb=e.target.closest("[data-atd-tail]");
+  if(!tb)return;
+  e.stopPropagation();
+  var aid=tb.getAttribute("data-atd-tail");
+  var r=R.find(x=>String(x.aid)===String(aid));
+  if(r&&window.SLTailCard){
+   SLTailCard.show({
+    hub:"CFB HUB · ANYTIME TD",
+    title:r.player+" ("+r.team+" "+r.pos+" · "+r.role+")",
+    sub:r.matchup+" · Tier: "+r.tier.toUpperCase(),
+    rows:[{player:r.player,market:"Anytime TD",line:"0.5",meta:r.why,rightTop:CFB.am(r.price)+" ("+r.book+")",rightBot:"Our TD: "+CFB.pc(r.p)+" vs "+CFB.pc(r.nv)+" fair"}],
+    footerLeft:"Model TD Chance: "+CFB.pc(r.p)+" · Edge "+(r.ev>=0?"+":"")+(r.ev*100).toFixed(1)+"%",
+    footerRight:"cfblab.sportslabshq.com · 21+",
+    filename:"cfblab-atd-"+r.player.toLowerCase().replace(/[^a-z0-9]+/g,"-")+".png"
+   });
+  }
+ });
+ q.oninput=fg.onchange=fp.onchange=fr.onchange=so.onchange=draw;draw();
+})</script></body></html>
