@@ -126,8 +126,6 @@ function openPlayerModal(aid){
     +'<div class="m-tile"><div class="l">2026 Season</div><div class="v">'+(s.gp||plBase.gp||0)+' GP</div><div class="s">'+(p.pos==="QB"?(s.pyd||0)+" Pass Yds":(p.pos==="RB"?(s.ryd||0)+" Rush Yds":(s.reyd||0)+" Rec Yds"))+'</div></div>'
     +'</div>';
 
-   if((p.pos==='RB'||plBase.pos==='RB')){h+='<div class="sl-rbex-mount" data-rbex="'+E(pid)+'"></div>';}
-
    if(pProps.length||pAtd){
     h+='<h3 style="margin:16px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8">🎯 Active Player Props &amp; Matchup Intel</h3>'
      +'<div class="card wrap" style="padding:0"><table><tr><th>Market</th><th>Side &amp; Line</th><th>Our Proj</th><th>Ours</th><th>Book Fair</th><th>Edge</th><th>Best</th><th>Slip</th></tr>'
@@ -153,7 +151,6 @@ function openPlayerModal(aid){
    h+='<div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center"><a href="player.html?id='+encodeURIComponent(pid)+'" class="chip" style="text-decoration:none">Open Full Player Page →</a><a href="props.html" class="chip" style="text-decoration:none">All CFB Player Props →</a></div>';
    box.innerHTML=h;
    box.querySelector("#cfb-modal-x").onclick=function(){ov.remove()};
-   var rx=box.querySelector(".sl-rbex-mount"); if(rx&&window.SLRBExpected) SLRBExpected.mount(rx,pid);
   });
  });
 }
