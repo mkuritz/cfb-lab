@@ -10,7 +10,18 @@ body.viz-on .sl-side{background:#0d191c;border-color:#223438;width:206px;font-si
 #viz-root .vz-eyebrow{font-size:10px;font-weight:750;color:#68adab;letter-spacing:1.3px}#viz-root .vz-status{display:flex;align-items:center;gap:7px;font:11px/1.4 ui-monospace,monospace;color:#a6bfbc;border:1px solid #2a4444;border-radius:4px;padding:5px 9px;white-space:nowrap}#viz-root .vz-status i{height:5px;width:5px;background:var(--vm);border-radius:50%}
 #viz-root .vz-tabs{display:flex;gap:0;border-bottom:1px solid var(--vl);padding-bottom:12px;margin:0 0 14px;overflow:auto}#viz-root .vz-tabs a{border:1px solid var(--vl);border-right:0;background:#0d1b1e;color:#a8bcbc;padding:9px 17px;min-height:40px;font-weight:700;text-decoration:none;white-space:nowrap;box-sizing:border-box}#viz-root .vz-tabs a:first-child{border-radius:5px 0 0 5px}#viz-root .vz-tabs a:last-child{border-radius:0 5px 5px 0;border-right:1px solid var(--vl)}#viz-root .vz-tabs a[aria-current]{background:#176269;color:#e6fffa;border-color:#378e8b}
 #viz-root #preview-status{margin:0 0 12px;color:var(--vs);font-size:13px}#viz-root #preview-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:0 0 16px}
-#viz-root .pv-control{display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--vs)}#viz-root select,#viz-root .pv-reset{min-height:40px;padding:8px 10px;border-radius:4px;border:1px solid var(--vl);background:#0e1c1f;color:var(--vt);font:inherit}#viz-root .pv-reset{cursor:pointer}
+#viz-root .pv-control{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:#a8c4bf;min-width:160px}
+#viz-root select,#viz-root .pv-reset,#viz-root button.pv-reset{
+  appearance:none;-webkit-appearance:none;min-height:44px;padding:10px 14px;border-radius:10px;
+  border:1px solid #3a675c;background:#113d36;color:#eefaf5;font:inherit;
+  transition:background .15s,border-color .15s,color .15s,box-shadow .15s;color-scheme:dark}
+#viz-root select{
+  padding-right:36px;
+  background:#113d36 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239dbfbb' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") right 14px center/12px no-repeat;
+  box-shadow:inset 0 1px 0 #ffffff08;border-radius:10px}
+#viz-root .pv-reset{cursor:pointer;border-radius:999px;background:#174e40;border-color:#2f7a68;color:#b5ffe4;font-weight:750}
+#viz-root .pv-reset:hover,#viz-root select:hover{border-color:#7de4c3}
+#viz-root .vz-tabs a{transition:background .15s,border-color .15s,color .15s;min-height:44px;display:inline-flex;align-items:center}
 #viz-root #preview-app{display:grid;gap:14px}#viz-root .pv-card{background:var(--vb);border:1px solid var(--vl);border-radius:6px;padding:16px;box-shadow:0 2px 8px #00000012}#viz-root .pv-card h2{margin:0 0 12px;font-size:15px;font-weight:700;color:#d7e9e6}
 #viz-root .pv-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin:0 0 12px}#viz-root .pv-kpi{background:#14272a;border:1px solid #263c40;border-radius:4px;padding:12px}#viz-root .pv-kpi small{display:block;color:#a4bbbc;font-size:11px}#viz-root .pv-kpi strong{display:block;font-size:22px;letter-spacing:-.5px;margin-top:4px;font-variant-numeric:tabular-nums}
 #viz-root .mut,#viz-root .mut.sm{color:var(--vs)!important;font-size:12px!important;line-height:1.55}#viz-root .vz-context{font-size:14px;line-height:1.55;color:#d6e5e3;margin:0 0 10px}#viz-root .pv-chart{width:100%;height:auto;background:#102326;border:1px solid #324e52;border-radius:2px}
@@ -37,8 +48,8 @@ function blurb(v){return v==='viz-analyzer'?'Model vs book, talent, SOS and inju
 async function loadPreview(){
  if(window.CFBHubViews)return;
  const load=src=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(Error(src));document.head.appendChild(s)});
- if(!window.PV)await load('preview-dom.js?v=1109hub2');
- if(!window.CFBHubViews)await load('cfb-hub-views.js?v=1109hub2');
+ if(!window.PV)await load('preview-dom.js?v=1109hub3');
+ if(!window.CFBHubViews)await load('cfb-hub-views.js?v=1109hub3');
  if(!window.CFBHubViews)throw Error('CFB hub views failed to load');
 }
 async function show(){
