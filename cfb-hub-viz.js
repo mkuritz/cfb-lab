@@ -48,8 +48,8 @@ function blurb(v){return v==='viz-analyzer'?'Model vs book, talent, SOS and inju
 async function loadPreview(){
  if(window.CFBHubViews)return;
  const load=src=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(Error(src));document.head.appendChild(s)});
- if(!window.PV)await load('preview-dom.js?v=1109hub3');
- if(!window.CFBHubViews)await load('cfb-hub-views.js?v=1109hub3');
+ if(!window.PV)await load('preview-dom.js?v=1109hub5');
+ if(!window.CFBHubViews)await load('cfb-hub-views.js?v=1109hub5');
  if(!window.CFBHubViews)throw Error('CFB hub views failed to load');
 }
 async function show(){
