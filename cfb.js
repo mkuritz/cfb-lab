@@ -12,13 +12,22 @@ function edge(e){return e==null?'<span class="edge" title="Needs 2+ books">EDGE 
 function roleBadge(p){
  if(!p)return"";
  var r=p.role||(p.starter?(p.pos+"1 · Starter"):(p.pos+" · Rotation"));
- var cls=p.starter!==false?"st":"bn";
+ var elig=p.elig||"";
+ var status="";
+ if(elig==="out") status='<span class="role-pill bn">OUT</span> ';
+ else if(elig==="flag") status='<span class="role-pill bn">'+E(p.inj||"Listed")+'</span> ';
+ else if(elig==="cleared") status='<span class="role-pill st">Cleared</span> ';
+ else if(elig==="available") status='<span class="role-pill st">Available</span> ';
+ else if(elig==="conflict") status='<span class="role-pill bn">Conflict</span> ';
+ else if(elig==="expired") status='<span class="role-pill bn">Prior report expired</span> ';
+ else if(elig==="unknown") status='<span class="role-pill bn">Unknown</span> ';
+ var cls=(elig==="out"||p.starter_eligible===false)?"bn":(p.starter!==false?"st":"bn");
  var sh="";
  if(p.pos==="RB"&&p.cs)sh=' <span class="usg-pill">'+p.cs+'% Carry</span>';
  else if((p.pos==="WR"||p.pos==="TE")&&p.rs)sh=' <span class="usg-pill">'+p.rs+'% Rec Share</span>';
  else if(p.use_pct)sh=' <span class="usg-pill">'+p.use_pct+'% USG</span>';
  var ht=p.hit_l5?' <span class="hit-pill">'+E(p.hit_l5)+' L5</span>':'';
- return '<span class="role-pill '+cls+'">★ '+E(r)+'</span>'+sh+ht;
+ return status+'<span class="role-pill '+cls+'">'+(elig==="out"?"":"★ ")+E(r)+'</span>'+sh+ht;
 }
 
 var KS={bk:1000,m:0.25};
