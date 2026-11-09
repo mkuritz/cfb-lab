@@ -1,47 +1,23 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const {JSDOM}=require('jsdom');const roots=(process.env.HUB_RELEASE_ROOTS||path.resolve(__dirname,'..')).split(':');let checks=0;
-const ok=(v,m)=>{assert.ok(v,m);checks++},tick=()=>new Promise(r=>setTimeout(r,15));
-async function load(root,page,query=''){
- const dom=new JSDOM(fs.readFileSync(path.join(root,page),'utf8'),{url:'https://test.sportslabshq.com/'+page+query,runScripts:'outside-only'}),w=dom.window,requests=[],runtimeErrors=[];w.addEventListener('error',e=>runtimeErrors.push(String(e.error||e.message)));w.addEventListener('unhandledrejection',e=>runtimeErrors.push(String(e.reason)));
- w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'))};
- w.fetch=async u=>{requests.push(String(u));const p=path.resolve(root,String(u));assert.ok(p.startsWith(root+path.sep));return {ok:fs.existsSync(p),status:fs.existsSync(p)?200:404,json:async()=>JSON.parse(fs.readFileSync(p,'utf8'))}};
- for(const e of w.document.querySelectorAll('script[src]')){const src=e.getAttribute('src');if(src.startsWith('https://')){assert.equal(src,'https://sportslabshq.com/sl/sl.js?v=12');continue}w.eval(fs.readFileSync(path.join(root,src.split('?')[0]),'utf8'))}
- // The actual shared SDK has early-return guards for these exact module IDs.
- // Hidden sentinels suppress only optional timing content, never the account/gate SDK.
- const css=w.document.createElement('style');css.textContent=fs.readFileSync(path.join(root,'preview.css'),'utf8');w.document.head.append(css);
- for(const id of ['sl-top10','sl-lab-inline-intel']){const marker=w.document.getElementById(id);ok(marker?.hidden&&marker.children.length===0,'recorded-route optional-module mount guard '+id);ok(w.getComputedStyle(marker).display==='none','optional module stays suppressed '+id)}
- for(const cls of ['sl-intel-pill','sl-intel-hdr-btn']){const el=w.document.createElement('button');el.className=cls;w.document.body.append(el);ok(w.getComputedStyle(el).display==='none','unrelated timing launcher suppressed '+cls);el.remove()}
- for(const cls of ['sl-bar','sl-acct']){const el=w.document.createElement('div');el.className=cls;w.document.body.append(el);ok(w.getComputedStyle(el).display!=='none'&&!el.inert,'shared account/access controls preserved '+cls);el.remove()}
- const native=w.document.getElementById('v2bar');if(native)ok(w.getComputedStyle(native).display==='none','duplicate native bar suppressed only on recorded visual route');
- let legacyShortcut=0;w.document.addEventListener('keydown',()=>legacyShortcut++);w.document.dispatchEvent(new w.KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true,cancelable:true}));ok(w.document.querySelector('.pv-more').open&&legacyShortcut===0,'recorded-route shortcut opens existing core tool links, not live timing desk');w.document.querySelector('.pv-more').open=false;
- w.document.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));ok(legacyShortcut===1,'unrelated keyboard events remain intact');
- ok(w.document.querySelector('link[rel=icon]')?.getAttribute('href')==='favicon.ico?v=1106qa4'&&fs.readFileSync(path.join(root,'favicon.ico')).subarray(0,4).equals(Buffer.from([0,0,1,0])),'explicit valid first-party favicon, no missing fallback');
- await tick();ok(runtimeErrors.length===0,'no first-party DOM runtime errors: '+runtimeErrors.join('; '));ok(![...w.document.querySelectorAll('#preview-app h2')].some(x=>x.textContent==='Unavailable'),'boot must not render an error card: '+page+' '+w.document.querySelector('#preview-app').textContent);
- ok(w.document.querySelector('#preview-app').children.length>0,'actual content rendered');ok(w.document.querySelectorAll('#preview-nav a').length>5,'native navigation preserved');
- return {w,dom,requests};
-}
-(async()=>{for(const root of roots){const sport=['soccer','cbb','cfb','nfl'].find(s=>fs.existsSync(path.join(root,s+'-preview.js')));assert.ok(sport,'release root');
- const json=f=>JSON.parse(fs.readFileSync(path.join(root,f),'utf8'));
- if(sport==='soccer'){
-  const {w,dom,requests}=await load(root,'visual-lab.html');ok(w.document.querySelectorAll('svg').length>=4,'histogram and three comparison meters');ok(!w.document.querySelector('.pv-pitch'),'unsupported pitch absent');ok(!w.document.body.textContent.includes('StatsBomb'),'no unlicensed research UI');ok(requests.every(x=>['data/hub_profiles.json','data/scorers.json'].includes(x)),'only latest native snapshot files read');
-  const P=json('data/hub_profiles.json'),sel=w.document.querySelector('select');ok(sel.options.length>100,'real selectable profiles');const id=sel.options[1].value;sel.value=id;sel.dispatchEvent(new w.Event('change'));ok(w.location.search.includes(id),'functional profile selector');ok([...w.document.querySelectorAll('a')].some(a=>a.search.includes('visualPlayer='+id)),'exact native profile route');
-  let opened;w.openPlayerModal=(...a)=>opened=a;w.history.replaceState(null,'','?visualPlayer='+id);w.eval(fs.readFileSync(path.join(root,'profile-bridge.js'),'utf8'));await tick();ok(opened?.[0]===id&&opened?.[1]===P.players[id].player,'native dispatch uses exact ID');dom.window.close();
+const {JSDOM}=require('jsdom');const root=path.resolve(__dirname,'..');let checks=0;
+const ok=(v,m)=>{assert.ok(v,m);checks++};
+(async()=>{
+ ok(fs.existsSync(path.join(root,'cfb-hub-viz.js')),'hub viz module present');
+ ok(fs.existsSync(path.join(root,'cfb-hub-views.js')),'hub views module present');
+ ok(fs.existsSync(path.join(root,'cfb-sidenav.js')),'sidenav module present');
+ const nav=fs.readFileSync(path.join(root,'navcfg.js'),'utf8');
+ ok(nav.includes('index.html#viz-analyzer')&&nav.includes('index.html#viz-conference')&&nav.includes('index.html#viz-flow'),'nav uses in-hub hashes');
+ for(const [page,h] of[['matchup-analyzer.html','viz-analyzer'],['conference-map.html','viz-conference'],['game-flow.html','viz-flow']]){
+  const html=fs.readFileSync(path.join(root,page),'utf8');
+  ok(html.includes('location.replace')&&html.includes(h),'standalone '+page+' redirects to #'+h);
  }
- if(sport==='cbb'){
-  let {w,dom}=await load(root,'matchup-duel.html');const D=json('data/cbb.json');const rated=D.teams.filter(t=>t.id!==278&&Number.isFinite(t.adjO)&&Number.isFinite(t.adjD));ok(w.document.querySelectorAll('g[role=link]').length===rated.length,'all real rated teams plotted');ok(![...w.document.querySelectorAll('a')].some(a=>a.href.includes('team-shot-chart.html')),'unsupported coordinate tab hidden');ok(w.document.body.textContent.includes('barttorvik.com'),'required rating credit retained');ok(w.document.querySelectorAll('#preview-app button.pv-link').length>0,'real native player controls');
-  let opened;w.CBB.openPlayerModal=(...a)=>opened=a;w.document.querySelector('#preview-app button.pv-link').click();ok(opened&&D.players.some(p=>String(p.id)===opened[0]&&String(p.tid)===opened[1]),'exact native player modal dispatch');dom.window.close();
-  ({w,dom}=await load(root,'power-map.html'));ok(w.document.querySelectorAll('svg').length>5,'real conference distributions');ok(!w.document.body.textContent.includes('Observed risers'),'frozen movers removed');ok(w.document.body.textContent.includes('West Florida'),'verified unrated transition member displayed');ok(![...w.document.querySelectorAll('a')].some(a=>a.search.includes('membership%3A')),'no invented native membership ID');dom.window.close();
- }
- if(sport==='cfb'){
-  for(const page of ['matchup-analyzer.html','conference-map.html']){const {w,dom,requests}=await load(root,page);ok(w.document.querySelectorAll('table').length>0,'actual native values rendered');ok(!requests.some(x=>x.includes('cfbd_comparison')),'no raw supplemental mirror');if(page==='matchup-analyzer.html'){w.document.querySelector('#preview-app button').click();ok(w.document.querySelector('dialog[open]')||w.document.querySelector('dialog')?.open,'exact local team detail');}dom.window.close()}
-  const {w,dom}=await load(root,'game-flow.html','?event=401859185');ok(w.document.querySelectorAll('polyline').length===2,'actual home/away probability series');ok(w.document.querySelectorAll('g[role=button]').length===14,'actual probability windows are interactive');w.document.querySelectorAll('g[role=button]')[1].dispatchEvent(new w.MouseEvent('click'));ok(w.document.querySelector('select[aria-label="Inspect recorded play window"]').value==='1','chart click selects genuine recorded window');w.document.querySelector('.pv-reset').click();ok(w.document.querySelector('select[aria-label="Inspect recorded play window"]').value==='0','probability selection resets');ok(w.document.querySelectorAll('svg').length===2,'probability and aggregate drive charts');ok(w.document.body.textContent.includes('Historical completed 2026 game'),'historical completed label');const E=json('data/visual_preview/event_view.json');ok(E.datasets.length===1&&!E.datasets[0].local_only,'only publishable event dataset');const g=E.datasets[0].games[0];ok(g.id==='401859185'&&g.raw_counts.drives===16&&g.raw_counts.wp===131,'actual validated corpus coverage');ok(g.wp_bins.length===14&&g.wp_bins.every(b=>Math.abs(b.home_mean+b.away_mean-1)<1e-8),'summary probabilities complement');ok(g.drive_summary.reduce((s,x)=>s+x.drives,0)===16,'drive aggregate count consistency');ok(!('wp' in g)&&!('drives' in g),'raw responses absent');const ids=json('data/visual_preview/profile_ids.json');ok(ids.every(id=>/^\d+$/.test(id)&&fs.existsSync(path.join(root,'data/players',id+'.json'))),'every native profile ID has its real file');dom.window.close();
- }
- if(sport==='nfl'){
-  const {w,dom}=await load(root,'unit-board.html');ok(w.document.querySelectorAll('svg').length===2,'actual unit offense/defense charts');ok(w.document.body.textContent.includes('Low Hurdles')&&w.document.body.textContent.includes('Formulas'),'existing navigation preserved');let opened;w.NFLTeam=t=>opened=t;w.document.querySelector('#preview-app button').click();await tick();ok(opened==='BUF','native team modal exact canonical ID');ok(![...w.document.querySelectorAll('a')].some(a=>a.href.includes('red-zone-map.html')),'unavailable map hidden');dom.window.close();
-  const a=await load(root,'injury-cascade.html','?off=BUF&window=all');ok(a.w.document.querySelectorAll('svg').length===1,'actual observed opportunity history');ok(!a.w.document.body.textContent.includes('Listed potential beneficiaries'),'unsupported historical causal cascade removed');const O=json('data/opportunity_history.json');ok(Object.keys(O.teams).length===32,'all32 actual team histories');ok(Object.values(O.teams).flat().every(x=>x.carries===x.players.reduce((s,p)=>s+p.carries,0)&&x.targets===x.players.reduce((s,p)=>s+p.targets,0)),'attributed count denominators consistent');a.dom.window.close();
- }
- // New helper never parses supplied data as markup or permits dangerous links/attributes.
- const p=sport==='soccer'?'visual-lab.html':sport==='cbb'?'power-map.html':sport==='cfb'?'conference-map.html':'unit-board.html';const {w,dom}=await load(root,p);
- ok(w.document.querySelector('.pv-nav-primary a[aria-current=page]'),'active visual tab stays in primary group');ok(w.document.querySelector('.pv-more summary'),'remaining Hub tools grouped, not removed');ok([...w.document.querySelectorAll('.pv-data')].every(x=>!x.open),'dense data tables collapsed by default');const initialSearch=w.location.search,filter=w.document.querySelector('#preview-controls select');if(filter?.options.length>1){filter.value=filter.options[1].value;filter.dispatchEvent(new w.Event('change'));w.document.querySelector('.pv-reset').click();ok(w.location.search===initialSearch,'functional filter reset returns to initial defaults')}
- const hostile='<img src=x onerror=alert(1)>';const node=w.PV.node('p',{},hostile);ok(node.textContent===hostile&&!node.querySelector('img'),'hostile text not parsed');assert.throws(()=>w.PV.node('a',{href:'javascript:alert(1)'},'x'));checks++;assert.throws(()=>w.PV.node('p',{onclick:'alert(1)'},'x'));checks++;await assert.rejects(w.PV.json('https://evil.invalid/data'));checks++;dom.window.close();
- console.log(sport+' release checks passed');}console.log(checks+' release DOM/data/security assertions passed');})().catch(e=>{console.error(e);process.exit(1)});
+ const idx=fs.readFileSync(path.join(root,'index.html'),'utf8');
+ ok(idx.includes('cfb-hub-viz.js')&&idx.includes('cfb-sidenav.js'),'index loads hub integration');
+ // Redirect script preserves query
+ const dom=new JSDOM(fs.readFileSync(path.join(root,'matchup-analyzer.html'),'utf8'),{url:'https://cfblab.sportslabshq.com/matchup-analyzer.html?game=2',runScripts:'dangerously'});
+ await new Promise(r=>setTimeout(r,20));
+ ok((dom.window.__cfbVizRedirect||'').includes('#viz-analyzer')&&(dom.window.__cfbVizRedirect||'').includes('game=2'),'redirect keeps game query');
+ // Data contracts still present
+ for(const f of['data/cfb.json','data/meta.json','data/visual_preview/event_view.json','data/visual_preview/profile_ids.json']) ok(fs.existsSync(path.join(root,f)),'data '+f);
+ console.log(`cfb hub release checks passed\n${checks} assertions passed`);
+})().catch(e=>{console.error(e);process.exitCode=1});

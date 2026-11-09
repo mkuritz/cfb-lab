@@ -1,0 +1,54 @@
+(function(){'use strict';
+const {node:n,text,card,num,pc,table,select,dialog,bars,json,chart}=PV;
+const Q=new URLSearchParams(location.search);let app,view,Dready=null;const VIEWMAP={'viz-analyzer':'analyzer','viz-conference':'conference','viz-flow':'flow'};
+let D,meta,profileIds,EV,eventId=Q.get('event')||'',game=Number(Q.get('game'))||0,conf=Q.get('conf')||'all',windowIndex=0;
+const power=id=>(D.power||[]).find(t=>String(t.id)===String(id));
+function team(id){const t=power(id),r=D.teams[id];return n('button',{class:'pv-link',click:()=>teamOpen(id)},t?.nm||r?.nm||id)}
+function teamOpen(id){
+ const t=power(id),r=D.teams[id];if(!t&&!r)return;
+ const games=D.games.filter(g=>String(g.a)===String(id)||String(g.h)===String(id));
+ dialog(t?.nm||r.nm,text('CFB Hub team detail · current cached season snapshot '+new Date(meta.updated).toLocaleString('en-US',{timeZone:'America/New_York'})+' ET'),table(['Field','Stored value'],[['Conference',t?.conf||r?.conf],['Record',t?.rec],['Base rating',num(t?.rat)],['Existing injury-adjusted rating',num(t?.inj_rat)],['Talent / rank',num(t?.tal,0)+' / '+num(t?.talrk,0)],['Schedule strength (sosp/sosr)',num(t?.sosp)+' / '+num(t?.sosr)]]),table(['Upcoming snapshot game','Model home spread','Book home spread'],games.map(g=>[g.aab+' @ '+g.hab,num(g.ours_sp,1),num(g.bk_sp,1)])));
+}
+function player(p){const id=String(p.aid||'');return /^\d+$/.test(id)&&profileIds.includes(id)?n('a',{href:'player.html?'+new URLSearchParams({id})},p.nm):p.nm||'Unavailable'}
+function unitChart(rows,names){const s=chart('Stored unit percentile comparison',800,Math.max(150,rows.length*58+45));s.append(n('text',{x:200,y:17,fill:'#7de4c3'},names[0]),n('text',{x:490,y:17,fill:'#72afff'},names[1]));rows.forEach(([label,a,b],i)=>{const y=35+i*58;s.append(n('text',{x:5,y:y+20,fill:'#b4cdc8'},label));for(const [value,color,offset] of [[a,'#7de4c3',0],[b,'#72afff',22]]){if(typeof value==='number'&&Number.isFinite(value))s.append(n('rect',{x:200,y:y+offset,width:Math.max(0,Math.min(100,value))*5,height:15,rx:3,fill:color}),n('text',{x:720,y:y+offset+12,fill:'#e7f7f2'},num(value,0)))}});return s}
+function analyzer(){
+ const g=D.games[Math.max(0,Math.min(game,D.games.length-1))];if(!g){app.replaceChildren(card('No matchup snapshot',text('No games in cached file.')));return}
+ const a=power(g.a),h=power(g.h);const names=[a?.nm||g.aab,h?.nm||g.hab];
+ const cols=Object.entries(D.units||{}).map(([label,vals])=>[label,vals[g.a]??'Unavailable',vals[g.h]??'Unavailable']);
+ const info=t=>{return card(t?team(t.id):'Team unavailable',PV.metrics([['Base rating',num(t?.rat)],['Injury-adjusted rating',num(t?.inj_rat)],['Talent rank',num(t?.talrk,0)]]),table(['Field','Snapshot'],[['Base rating',num(t?.rat)],['Existing injury-adjusted rating',num(t?.inj_rat)],['Talent',num(t?.tal,0)+' · #'+num(t?.talrk,0)],['SOS (sosp / sosr)',num(t?.sosp)+' / '+num(t?.sosr)]]),text('Existing recorded hub values only. No separate injury-adjusted betting line is inferred.','mut sm'))};
+ const impact=(D.line_impact||[]).find(x=>x.gid===g.a+'@'+g.h||x.key===g.aab+'@'+g.hab);
+ app.replaceChildren(n('div',{class:'pv-two'},info(a),info(h)),card('Model vs market',PV.metrics([['Model home spread',num(g.ours_sp,1)],['Recorded book spread',num(g.bk_sp,1)],['Home-win estimate',pc(g.ours_p)]]),table(['Stored projection','Value'],[['Existing model home spread',num(g.ours_sp,1)],['Book home spread',num(g.bk_sp,1)],['Book total',num(g.bk_tot,1)],['Existing home-win estimate',pc(g.ours_p)],['Book fair home-win',pc(g.bk_fair)]]),...(g.badges||[]).map(b=>text(b.txt,'mut sm'))),card('Unit percentile battle',unitChart(cols,names),table(['Unit',names[0],names[1]],cols)),card('Injury context · not causal line movement',impact?table(['Player','Status','Note'],(impact.injuries||[]).map(p=>[p.player,p.status,p.note])):text('No injury-impact context for this game.')),card('Supported native player profiles',table(['Player','Market','Stored projection','Line'],(g.top_props||[]).map(p=>[player(p),p.mk,num(p.proj),p.line??'Unavailable']))));
+ PV.controls(select('Game',D.games.map((g,i)=>[i,g.aab+' @ '+g.hab]),game,v=>{game=Number(v);render()}));
+}
+function conference(){
+ const list=(D.power||[]).filter(t=>conf==='all'||t.conf===conf),ranked=(D.power||[]).slice().sort((a,b)=>(b.cfp||0)-(a.cfp||0)),by={};for(const t of list)(by[t.conf]??=[]).push(t);
+ const bubble=table(['Model order','Team','Model CFP bid','Posted AP rank'],ranked.slice(6,18).map((t,i)=>[i+7+(i+7===12?' · cut after this row':''),team(t.id),pc(t.cfp),t.ap??'NR']));
+ const cards=Object.entries(by).sort().map(([name,teams])=>{
+ const sorted=teams.slice().sort((a,b)=>(b.rat||0)-(a.rat||0)),favorite=teams.slice().sort((a,b)=>(b.cc||0)-(a.cc||0))[0];
+ return card(name+' · '+teams.length+' teams',text('Stored modeled conference-title leader: '+favorite.nm+' ('+pc(favorite.cc)+'); not bookmaker title odds.'),bars(sorted.map(t=>t.ab),sorted.map(t=>t.rat)),table(['Team','Base / injury adj','Model CFP','Model title','AP'],sorted.map(t=>[team(t.id),num(t.rat)+' / '+num(t.inj_rat),pc(t.cfp),pc(t.cc),t.ap??'NR'])));
+ });
+ app.replaceChildren(card('12-team model bubble',bubble,text('Order based on stored modeled CFP bid probability, not committee rankings or an official playoff bracket. AP rank is a separately posted snapshot field.')),n('div',{class:'pv-grid'},...cards));
+ PV.controls(select('Conference',[['all','All conferences'],...[...new Set(D.power.map(t=>t.conf))].sort().map(c=>[c,c])],conf,v=>{conf=v;render()}));
+}
+function flow(){
+ const available=(EV.datasets||[]).filter(d=>!d.local_only).flatMap(d=>d.games.map(g=>({...g,meta:d}))),g=available.find(g=>g.id===eventId)||available[0];
+ if(!g){app.replaceChildren(card('Event pipeline · awaiting permitted batch',text('The documented collector and validated event adapter are installed. No completed-game event batch is available in this preview output. Existing matchup/model data are not relabeled as event history.')));PV.controls();return}
+ eventId=g.id;const s=chart('Observed home/away win probability in10-play summary windows',760,300),bins=g.wp_bins||[],last=Math.max(1,...bins.map(b=>b.last_play)),X=v=>45+v/last*670,Y=v=>245-v*215;
+ for(const [key,color] of [['home_mean','#72afff'],['away_mean','#f58387']]){
+  if(bins.length)s.append(n('polyline',{points:bins.map(b=>X(b.last_play)+','+Y(b[key])).join(' '),fill:'none',stroke:color,'stroke-width':2.5}));
+ }
+ bins.forEach(b=>s.append(n('line',{x1:X(b.last_play),x2:X(b.last_play),y1:Y(b.home_min),y2:Y(b.home_max),stroke:'#426b73','stroke-width':5},n('title',{},'Observed play window '+b.first_play+'–'+b.last_play+' · n='+b.n))));
+ windowIndex=Math.max(0,Math.min(windowIndex,bins.length-1));const selected=bins[windowIndex];
+ bins.forEach((b,i)=>{const point=n('g',{role:'button',tabindex:0,'aria-label':'Inspect play window '+b.first_play+' to '+b.last_play,click:()=>{windowIndex=i;render()}},n('circle',{cx:X(b.last_play),cy:Y(b.home_mean),r:i===windowIndex?7:5,fill:'#72afff',stroke:i===windowIndex?'#e7f7f2':'#12362f','stroke-width':2},n('title',{},'Plays '+b.first_play+'–'+b.last_play+' · home '+pc(b.home_mean)+' / away '+pc(b.away_mean))));point.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();windowIndex=i;render()}});s.append(point)});
+ s.append(n('text',{x:45,y:280,fill:'#b4cdc8'},'Observed play order → · blue '+g.home+' / red '+g.away+' · mean by10-play window'));
+ const age=(Date.now()-Date.parse(g.meta.observed_at))/3600000;
+ app.replaceChildren(card('Historical completed '+g.meta.season+' game · '+g.away+' at '+g.home,n('div',{},team(g.away_id),' at ',team(g.home_id)),text(new Date(g.date).toLocaleString('en-US',{timeZone:'America/New_York'})+' ET · not live. Collected '+new Date(g.meta.observed_at).toLocaleString('en-US',{timeZone:'America/New_York'})+' ET'+(age>36?' · collection stale (>36h)':'')),text(g.raw_counts.drives+' drive records and '+g.raw_counts.wp+' WP observations validated. Public view contains transformed summaries, not a raw play feed.')),card('Win-probability estimates · recorded event summaries',selected?PV.metrics([['Selected play window',selected.first_play+'–'+selected.last_play],['Home mean',pc(selected.home_mean)],['Away mean',pc(selected.away_mean)]]):null,s,text(g.clock_basis+' Ten-play means/ranges reduce noise and do not fabricate additional observations. No forced opening/terminal probability.')),card('Largest observed probability swings',table(['Play order','Home Δ','Before → after','Recorded play'],g.swings.map(x=>[x.play,num(x.delta_home*100,1)+'pp',pc(x.home_before)+' → '+pc(x.home_after),x.description]))),card('Drive chart · period/team aggregates',bars(g.drive_summary.map(x=>'P'+x.period+' '+x.team),g.drive_summary.map(x=>x.net_yards)),table(['Start period','Offense','Drives','Plays','Net yards','Points','Mean start: yards to goal'],g.drive_summary.map(x=>[x.period,x.team,x.drives,x.plays,x.net_yards,x.points,num(x.mean_start_yards_to_goal,1)])),text('Longitudinal drive-start summary only. No lateral coordinates or inferred play/drive joins. Period labels come from actual drive starts; overtime is not assigned a regulation clock.')));
+ PV.controls(select('Completed event game',available.map(x=>[x.id,x.away+' at '+x.home+' · '+new Date(x.date).toLocaleDateString('en-US',{timeZone:'America/New_York'})]),eventId,v=>{eventId=v;windowIndex=0;render()}),select('Inspect recorded play window',bins.map((b,i)=>[i,'Plays '+b.first_play+'–'+b.last_play]),windowIndex,v=>{windowIndex=Number(v);render()}));
+}
+
+function render(){app=document.getElementById('preview-app');if(!app)return;view==='analyzer'?analyzer():view==='conference'?conference():flow();const q=new URLSearchParams({...(game?{game}:{}),...(conf&&conf!=='all'?{conf}:{}),...(eventId?{event:eventId}:{})});const qs=q.toString();history.replaceState(null,'',(qs?'?'+qs:'')+'#'+Object.keys(VIEWMAP).find(k=>VIEWMAP[k]===view));}
+async function ensure(){if(Dready)return Dready;Dready=(async()=>{[D,meta,profileIds,EV]=await Promise.all([json('data/cfb.json'),json('data/meta.json'),json('data/visual_preview/profile_ids.json'),json('data/visual_preview/event_view.json')])})();return Dready}
+async function show(hash){view=VIEWMAP[hash];if(!view)throw Error('Unknown visual');app=document.getElementById('preview-app');await ensure();PV.status((view==='flow'?'Historical completed game · Oct 31,2026 · not live':'2026 matchup snapshot · '+D.power.length+' stored teams · not live'),'2026 season · hub snapshot '+new Date(meta.updated).toLocaleString('en-US',{timeZone:'America/New_York'})+' ET · '+D.power.length+' stored FBS power teams. Not a live poll. Game Flow is a separate completed Oct 31 historical event.');render();if(Q.get('team'))teamOpen(Q.get('team'))}
+document.addEventListener('pv-reset',()=>{game=0;conf='all';eventId='';windowIndex=0;render()});
+window.CFBHubViews={show};
+})();

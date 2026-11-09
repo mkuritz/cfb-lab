@@ -64,3 +64,6 @@
 #cfb-modal .m-tile .l{font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:800;letter-spacing:.04em}
 #cfb-modal .m-tile .v{font-size:17px;font-weight:900;color:#fff;margin-top:2px}
 #cfb-modal .m-tile .s{font-size:10.5px;color:#94a3b8;margin-top:1px}
+
+/* preview hub viz header */
+.cfb-viz-head{display:flex;gap:12px;align-items:center;padding:4px 0 14px;border-bottom:1px solid #213236;margin-bottom:18px}.cfb-viz-head .logo{color:#e7f6f1;text-decoration:none;font-weight:800}.cfb-viz-head .logo b{color:#32c9b5}
