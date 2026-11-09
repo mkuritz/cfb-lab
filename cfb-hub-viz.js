@@ -36,12 +36,10 @@ function ensureShell(){
 function blurb(v){return v==='viz-analyzer'?'Model vs book, talent, SOS and injury-adjusted ratings for the selected game.':v==='viz-conference'?'Conference title leans, CFP bid order and the model bubble around the 12-team cut.':'Win-probability path and drive summary for a completed recorded game.'}
 async function loadPreview(){
  if(window.CFBHubViews)return;
- await new Promise((resolve,reject)=>{
-  const need=[];
-  if(!window.PV)need.push('preview-dom.js?v=1109hub1');
-  need.push('cfb-hub-views.js?v=1109hub1');
-  let left=need.length;need.forEach(src=>{const s=document.createElement('script');s.src=src;s.onload=()=>{if(--left===0)resolve()};s.onerror=()=>reject(Error(src));document.head.appendChild(s)});
- });
+ const load=src=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(Error(src));document.head.appendChild(s)});
+ if(!window.PV)await load('preview-dom.js?v=1109hub2');
+ if(!window.CFBHubViews)await load('cfb-hub-views.js?v=1109hub2');
+ if(!window.CFBHubViews)throw Error('CFB hub views failed to load');
 }
 async function show(){
  const v=location.hash.slice(1);const on=Object.hasOwn(VIEWS,v);
