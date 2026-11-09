@@ -13,7 +13,7 @@ body.viz-on .sl-side{background:#0d191c;border-color:#223438;width:206px;font-si
 #viz-root .pv-control{display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--vs)}#viz-root select,#viz-root .pv-reset{min-height:40px;padding:8px 10px;border-radius:4px;border:1px solid var(--vl);background:#0e1c1f;color:var(--vt);font:inherit}#viz-root .pv-reset{cursor:pointer}
 #viz-root #preview-app{display:grid;gap:14px}#viz-root .pv-card{background:var(--vb);border:1px solid var(--vl);border-radius:6px;padding:16px;box-shadow:0 2px 8px #00000012}#viz-root .pv-card h2{margin:0 0 12px;font-size:15px;font-weight:700;color:#d7e9e6}
 #viz-root .pv-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin:0 0 12px}#viz-root .pv-kpi{background:#14272a;border:1px solid #263c40;border-radius:4px;padding:12px}#viz-root .pv-kpi small{display:block;color:#a4bbbc;font-size:11px}#viz-root .pv-kpi strong{display:block;font-size:22px;letter-spacing:-.5px;margin-top:4px;font-variant-numeric:tabular-nums}
-#viz-root .mut,#viz-root .mut.sm{color:var(--vs)!important;font-size:12px!important;line-height:1.55}#viz-root .pv-chart{width:100%;height:auto;background:#102326;border:1px solid #324e52;border-radius:2px}
+#viz-root .mut,#viz-root .mut.sm{color:var(--vs)!important;font-size:12px!important;line-height:1.55}#viz-root .vz-context{font-size:14px;line-height:1.55;color:#d6e5e3;margin:0 0 10px}#viz-root .pv-chart{width:100%;height:auto;background:#102326;border:1px solid #324e52;border-radius:2px}
 #viz-root .pv-data{margin-top:10px}#viz-root .pv-scroll{overflow:auto}#viz-root table{width:100%;border-collapse:collapse;font-size:13px}#viz-root th,#viz-root td{padding:10px 8px;border-bottom:1px solid var(--vl);text-align:left;font-variant-numeric:tabular-nums}#viz-root thead th{font-size:10px;letter-spacing:.4px;color:#9db5b6;text-transform:uppercase}
 #viz-root .pv-link{background:transparent;border:0;color:var(--vm);cursor:pointer;font:inherit;padding:0;text-decoration:underline}
 #viz-root .pv-provenance{margin:8px 0 0;color:var(--vs);font-size:12px}
@@ -33,7 +33,7 @@ function ensureShell(){
  const hd=ensureHeader();
  if(!root){root=document.createElement('section');root.id='viz-root';root.hidden=true;root.setAttribute('aria-live','polite');hd.after(root)}
 }
-function blurb(v){return v==='viz-analyzer'?'Existing matchup projections, units, talent and schedule context. Ratings are not a separate injury-adjusted betting line.':v==='viz-conference'?'Every stored power team by conference, with modeled CFP and title context kept distinct from AP ranks.':'Historical completed-game win-probability path with observed swings. Not a live or future projection.'}
+function blurb(v){return v==='viz-analyzer'?'Model vs book, talent, SOS and injury-adjusted ratings for the selected game.':v==='viz-conference'?'Conference title leans, CFP bid order and the model bubble around the 12-team cut.':'Win-probability path and drive summary for a completed recorded game.'}
 async function loadPreview(){
  if(window.CFBHubViews)return;
  await new Promise((resolve,reject)=>{
